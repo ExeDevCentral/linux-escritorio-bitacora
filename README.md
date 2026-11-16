@@ -1,6 +1,6 @@
 ```c
 /* ============================================================================
- *  LINUX_ESCRITORIO(7)        SYSTEM LOGBOOK & FIXES        LINUX_ESCRITORIO(7)
+ *  LINUX_DESKTOP(7)           SYSTEM LOGBOOK & FIXES           LINUX_DESKTOP(7)
  *
  *  FILE:    README.md
  *  HOST:    EndeavourOS (Arch Linux) // Kernel 7.3.4-arch1-2 // x86_64
@@ -9,25 +9,25 @@
  *  LICENSE: MIT
  *
  *  DESCRIPTION:
- *    Registro tecnico en estilo clasico UNIX/C de compatibilidad,
- *    correcciones de drivers, hardening y gaming bajo Linux de escritorio.
- *    Documenta que funciona directo, que se rompio y como se reparo.
+ *    Technical logbook in classic UNIX/C style covering hardware compatibility,
+ *    driver fixes, system hardening, and desktop Linux gaming tweaks.
+ *    Documents what works out of the box, what broke, and how it was fixed.
  * ============================================================================ */
 ```
 
 ```text
 +------------------------------------------------------------------------------+
-|  MATRIZ DE COMPATIBILIDAD & FIXES  [ VERIFICADO: 2026-11-16 ]                |
+|  COMPATIBILITY & FIXES MATRIX  [ VERIFIED: 2026-11-16 ]                      |
 +--------------------+----------------------------------+----------------------+
-| SUBSISTEMA         | HARDWARE / STACK                 | ESTADO & FIX         |
+| SUBSYSTEM          | HARDWARE / STACK                 | STATUS & FIX         |
 +--------------------+----------------------------------+----------------------+
 | [01] APU / GPU     | Ryzen 5 8500G / Radeon 740M      | [OK] ppfeaturemask   |
 |                    | amdgpu + RADV + powerprofilesctl |      + RADV SAM      |
 +--------------------+----------------------------------+----------------------+
-| [02] WIFI USB      | Realtek 8188eu (wlan0 Hotspot)   | [FX] blacklist       |
+| [02] USB WIFI      | Realtek 8188eu (wlan0 Hotspot)   | [FX] blacklist       |
 |                    |                                  |      rtl8xxxu + WD   |
 +--------------------+----------------------------------+----------------------+
-| [03] RED / DNS     | enp5s0 (r8169) + resolved        | [OK] TCP BBR + fq    |
+| [03] NET / DNS     | enp5s0 (r8169) + resolved        | [OK] TCP BBR + fq    |
 |                    |                                  |      DoT + -LLMNR    |
 +--------------------+----------------------------------+----------------------+
 | [04] GAMING        | PoE Standalone / WoW 3.3.5a      | [OK] Proton Exp /    |
@@ -35,19 +35,19 @@
 +--------------------+----------------------------------+----------------------+
 | [05] AUDIO         | PipeWire + WirePlumber           | [OK] System Default  |
 +--------------------+----------------------------------+----------------------+
-| [06] HARDENING     | Suite TITAN (sysctl + firewalld) | [OK] ICMP Drop + MAC |
+| [06] HARDENING     | TITAN Suite (sysctl + firewalld) | [OK] ICMP Drop + MAC |
 +--------------------+----------------------------------+----------------------+
 ```
 
-## /* INDICE DE DOCUMENTACION */
+## /* DOCUMENTATION INDEX */
 
-| Archivo | Descripcion |
+| File | Description |
 | --- | --- |
-| [BITACORA.md](BITACORA.md) | Linea de tiempo cronologica (`21 Oct - 16 Nov 2026`) con instalaciones, regresiones y fixes. |
-| [SEGURIDAD.md](SEGURIDAD.md) | Blindaje TITAN en 8 capas (`sysctl`, `firewalld` DROP, DNS-over-TLS, MAC, Docker, ClamAV). |
-| [INVENTARIO_Y_ORDEN.md](INVENTARIO_Y_ORDEN.md) | Mapa de scripts en `~/.local/bin/`, symlinks de usuario y archivos en `/etc/`. |
+| [BITACORA.md](BITACORA.md) | Chronological timeline (`Oct 21 – Nov 16, 2026`) of installations, regressions, and fixes. |
+| [SEGURIDAD.md](SEGURIDAD.md) | 8-layer TITAN hardening (`sysctl`, `firewalld` DROP, DNS-over-TLS, MAC, Docker, ClamAV). |
+| [INVENTARIO_Y_ORDEN.md](INVENTARIO_Y_ORDEN.md) | Map of `~/.local/bin/` scripts, user symlinks, and `/etc/` system overrides. |
 
-## /* ESPECIFICACION DEL SISTEMA */
+## /* SYSTEM SPECIFICATION */
 
 ```c
 struct system_state {
@@ -61,7 +61,7 @@ struct system_state {
 };
 ```
 
-## /* DAEMONS & SERVICIOS ACTIVOS */
+## /* ACTIVE DAEMONS & SERVICES */
 
 ```text
 [SYSTEMD // SYSTEM]
