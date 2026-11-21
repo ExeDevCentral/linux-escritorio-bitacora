@@ -87,4 +87,5 @@ Verified status: `running`.
   - `~/.ssh/`
   - `~/.gnupg/`
   - `~/.password-store/`
-- **Pending action item:** sensitive files in `~/Descargas/` (`dni_frente.jpg`, `dni_dorso.jpg`, `Mozilla-Recovery-Key_...txt`) should be moved to a private or encrypted folder outside `Descargas`.
+- **Sensitive files hygiene (`2026-11-21`):** verified `~/Downloads/` is completely clean of exposed IDs (`dni_*`) and recovery keys (`Mozilla-Recovery-Key*` relocated to `~/.seguridad/documentos/`).
+- **Automated Configuration Vault (`matrix-auto-backup.timer`, `2026-11-21`):** daily persistent `systemd --user` timer (`Nice=19`, `IOSchedulingClass=idle`) running `~/.local/bin/matrix-auto-backup` to store rolling 7-day `chmod 600` snapshots in `~/.local/share/matrix-backups/` (`chmod 700`) protecting KDE/KWin, Matrix OS, `~/.local/bin`, and `~/.gemini/config/`.
