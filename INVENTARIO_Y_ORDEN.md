@@ -27,9 +27,33 @@ Verified map of custom scripts, symlinks, system configurations, and unorganized
 ### Gaming, Desktop & Utilities
 - `~/.local/bin/jugar-wow`, `wow`, `modo-gamer`, `wow-addons-manager`
 - `~/.local/bin/cambiar-fondo-espacio` (invoked by `~/Escritorio/Cambiar-Fondo-Espacial.desktop`)
+- `~/.local/bin/cambiar-fondo-matrix` (activates 1080p Matrix Digital Rain wallpaper loop with `PauseMode=3` for zero gaming overhead)
+- `~/.local/bin/matrixctl` (master orchestrator for `~/Proyectos/matrix-os`: `apply`, `profile`, `wallpaper`, `hub`, `cockpit`, `doctor`, `install-deps`, `rollback`)
+- `~/.local/bin/matrix-hud-probe` (low-overhead JSON `/proc` + `/sys` + Dev/Ops/Audio telemetry probe for `org.matrix.hud` v2)
+- `~/.local/bin/matrix-deploy-hub` (PyQt6 CRT GUI + `--tui` monitor for dev ports, PM2, Docker, Git radar, Vercel/GH)
+- `~/.local/bin/matrix-cockpit` (4-pane Operator Cockpit launcher via Zellij or native Kitty 0.50 splits)
 - `~/.local/bin/convert-to-instagram`
 - `~/.local/bin/entrar-a-bios`
+- `~/.local/bin/reparar-linux` (one-shot root repair: validates UKI `.cmdline` with `objcopy`, syncs idempotent `blindaje-seguridad`, masks non-UKI `dracut` hooks, sets `WIRELESS_REGDOM="AR"`, disables `irqbalance`/`usbguard`)
+- `~/.local/bin/limpiar-disco-root` (system cleanup: orphan purge, `paccache -rk0`, orphaned system Flatpak `ostree prune`, journal vacuum, `fstrim -a`)
 - `~/.local/bin/agy`, `antigravity`, `gh`, `vc`, `vercel`
+- `~/.config/systemd/user/docker-desktop.service.d/timeout.conf` (`TimeoutStopSec=15s` shutdown hang fix)
+- `~/Documents/MANUAL_LINUX_ENDEAVOUROS_EXEQ.md` (offline host-specific Linux & UKI reference manual)
+- `~/Desktop/LEEME_INICIAR_DESDE_BASH.txt` & `~/Documents/LEEME_INICIAR_DESDE_BASH.txt` (emergency low-resource bash / TTY rescue guide)
+
+### Desktop Aesthetics, Terminal & Telemetry Paths (XDG Standard)
+- `~/.config/kitty/kitty.conf` (`JetBrainsMono Nerd Font`, `#000000` / `#00ff41`, `0.90` opacity, `zsh`)
+- `~/.config/starship.toml`, `~/.zshrc`, `~/.cache/zsh/` (`zsh-autosuggestions` + `zsh-syntax-highlighting`)
+- `~/.config/fastfetch/{config.jsonc,matrix-logo.txt}`
+- `~/.config/btop/{btop.conf,themes/matrix.theme}`, `~/.config/cava/config`, `~/.config/yakuakerc`
+- `~/.config/autostart/org.kde.yakuake.desktop` (Quake-style `F12` dropdown terminal on login)
+- `~/.config/kscreenlockerrc` (`matrix_digital_rain_static.png`)
+- `~/.local/share/color-schemes/MatrixPhosphor.colors` & `~/.local/share/plasma/desktoptheme/Matrix/`
+- `~/.local/share/icons/Matrix-Green/` (linked at `~/.icons/Matrix-Green` for Plasma cursor discovery) & `Papirus-Dark` (`green` folders)
+- `~/.local/share/konsole/Matrix.{colorscheme,profile}`
+- `~/.local/share/plasma/plasmoids/org.matrix.hud/`
+- `~/Vídeos/wallpapers/matrix/matrix_digital_rain_loop.mp4` & `~/Imágenes/matrix_digital_rain_static.png`
+- `~/backup-pre-rice/` (pre-rice dotfiles backup + `rollback.sh`)
 
 ---
 
@@ -40,13 +64,22 @@ Verified map of custom scripts, symlinks, system configurations, and unorganized
   - `98-network-security.conf` — TITAN Security (ICMP/network hardening)
   - `99-ip-forward.conf` — `net.ipv4.ip_forward = 1` (Wi-Fi hotspot routing)
   - `99-ryzen-gaming.conf` — TITAN Performance (Ryzen 5 8500G + TCP BBR + Wine/Proton)
-- **Kernel Modules (`/etc/modprobe.d/`):**
+- **Boot / UKI / Dracut (`/etc/kernel/`, `/etc/dracut.conf.d/`):**
+  - `/etc/kernel/cmdline` & `/etc/dracut.conf.d/99-matrix-cmdline.conf` — synchronized full UKI kernel command line including `rw root=UUID=...`, Plymouth `quiet splash`, and AppArmor LSM stack
+  - `/etc/kernel/install.conf` (`0644`, `layout=uki`)
+  - `/etc/kernel/install.d/{50-dracut-kifd,50-dracut-fallback,90-loaderentry-kifd,90-loaderentry-fallback}.install -> /dev/null` — masked duplicate non-UKI hooks
+- **Kernel Modules (`/etc/modprobe.d/`, `/etc/modules-load.d/`):**
   - `amdgpu.conf` — `ppfeaturemask=0xffffffff`
   - `8188eu.conf` + `blacklist-rtl8xxxu.conf` — stable USB Wi-Fi driver with power saving disabled
   - `zswap.conf` — `enabled=0` (in favor of `zstd` ZRAM)
+  - `snd-hda-intel-ultra.conf` (`power_save=0`) + `usbhid-1000hz.conf` (`1ms` USB polling)
+  - `/etc/modules-load.d/bbr.conf` — `tcp_bbr` + `sch_fq` (fixes early-boot `systemd-sysctl` `default_qdisc` error)
+  - `/etc/conf.d/wireless-regdom` — `WIRELESS_REGDOM="AR"`
 - **udev Rules (`/etc/udev/rules.d/`):**
   - `51-microcontrollers-mtk.rules` — ESP32 / CP210x / MediaTek
-  - `60-nvme-performance.rules` — `scheduler=none`, `read_ahead_kb=256`
+  - `60-nvme-performance.rules` — `ENV{DEVTYPE}=="disk"`, `scheduler=none`, `read_ahead_kb=256`, `rq_affinity=2`
+  - `65-usb-peripherals-lowlatency.rules` — disables USB autosuspend on mouse, keyboard, and webcam
+  - `70-poe-overlays-uinput.rules` — non-root `/dev/uinput` access for Wayland overlays
   - `99-logitech-c310.rules` — automatic configuration for Logitech C310 webcam
 - **Networking (`/etc/NetworkManager/conf.d/`):**
   - `00-mac-randomization.conf`

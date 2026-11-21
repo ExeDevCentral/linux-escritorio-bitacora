@@ -40,7 +40,8 @@ Verified status: `running`.
   - `ssh` and `dhcpv6-client` services permanently removed.
 - **`nm-shared` zone (`wlan0` interface — Hotspot):**
   - Only `dhcp`, `dns`, and `masquerade` enabled to allow NAT traffic for the `Red-Exeq-WiFi` hotspot.
-- **Docker zones:** `docker0` in `trusted` and bridge `br-adf4fab8589c` in `docker`.
+- **Docker zones:** `docker0` and bridge `br-adf4fab8589c` cleanly assigned to the `docker` zone (removed from `trusted` to prevent `ZONE_CONFLICT`).
+- **Idempotent boot hook:** `blindaje-seguridad.service` only invokes `firewall-cmd --reload` when permanent zone settings actually drift, preventing boot-time races against `dockerd` iptables chains.
 
 ---
 
@@ -75,8 +76,12 @@ Verified status: `running`.
 ## 6. Antivirus, Secure Boot & Directory Permissions
 
 - **ClamAV:** installed on `2026-11-04` with `clamav-freshclam.service` enabled for signature updates.
-- **AppArmor:** automatically enabled if `apparmor.service` is present.
-- **Secure Boot (`sbctl`):** installed on `2026-10-27` (requires `root` to inspect/manage UEFI keys).
+- **AppArmor:** active (`apparmor.service` enabled; kernel LSM stack `capability,landlock,lockdown,yama,apparmor,bpf` loaded via UKI cmdline).
+- **OOM Protection:** `earlyoom.service` active with D-Bus notifications.
+- **Desktop Hardware Services Posture (`2026-11-21`):**
+  - `irqbalance.service` disabled (unnecessary on single-socket AMD Ryzen 5 8500G; eliminates thermal and NVMe managed-IRQ `Permission denied` log spam).
+  - `usbguard.service` disabled by default (package retained for opt-in use via `ENABLE_USBGUARD=1`, preventing silent lockout of hotplugged USB drives, phones, and ESP32/UART microcontrollers).
+- **Secure Boot (`sbctl`):** installed on `2026-10-27` (UKIs automatically signed via `91-sbctl.install` when keys are enrolled).
 - **Restrictive permissions (`700` / `drwx------`) verified on:**
   - `~/.seguridad/` (contains `credenciales.txt` with `600` permissions)
   - `~/.ssh/`
