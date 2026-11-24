@@ -2,3 +2,6 @@
 *.swp
 *.tmp
 .env*
+
+# Local environment and build artifacts
+*.log
