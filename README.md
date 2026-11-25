@@ -81,4 +81,4 @@ struct system_state {
   * pm2.service                  * xdg-user-dirs.service    * docker-desktop (15s stop cap)
 ```
 
-_Última revisión: 2026-11-24 23:44_
+_Última revisión: 2026-11-25 20:05_
