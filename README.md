@@ -80,3 +80,5 @@ struct system_state {
   * baliza-watchdog.service      * pipewire.socket          * wireplumber.service
   * pm2.service                  * xdg-user-dirs.service    * docker-desktop (15s stop cap)
 ```
+
+_Última revisión: 2026-11-24 23:44_
