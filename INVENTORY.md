@@ -1,6 +1,6 @@
 # System Inventory & Cleanup Plan
 
-Verified map of custom scripts, symlinks, system configurations, and unorganized files as of **2026-11-12**.
+Verified map of custom scripts, symlinks, system configurations, and unorganized files (updated **2026-11-25**).
 
 > **Safety rule:** Do not move or delete scripts in `~/.local/bin/` without first updating any symlinks and `systemd` units pointing to them (e.g., `blindaje-seguridad.service` or `baliza-watchdog.service`).
 
@@ -25,6 +25,7 @@ Verified map of custom scripts, symlinks, system configurations, and unorganized
 - `~/.local/bin/compartir_internet.py`
 
 ### Gaming, Desktop & Utilities
+- `~/.local/bin/titan-game-run` (`v3.1` CachyOS-style gaming wrapper: holds `amd-pstate-epp=performance` via `powerprofilesctl launch`, unlocks Radeon 740M DPM to `2799 MHz` via Polkit `gpuclockctl`, routes Dota 2 to `<1s` NVMe RADV shader cache `~/.cache/dota2_radv_cache`, and read-only locks `video.txt` `chmod 444` with `r_low_latency=0` against the `Mesa 26.3.1` `VK_AMD_anti_lag` sleep bug)
 - `~/.local/bin/jugar-wow`, `wow`, `modo-gamer`, `wow-addons-manager`
 - `~/.local/bin/cambiar-fondo-espacio` (invoked by `~/Escritorio/Cambiar-Fondo-Espacial.desktop`)
 - `~/.local/bin/cambiar-fondo-matrix` (activates 1080p Matrix Digital Rain wallpaper loop with `PauseMode=3` for zero gaming overhead)

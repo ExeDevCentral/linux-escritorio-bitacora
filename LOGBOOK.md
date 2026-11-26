@@ -84,7 +84,7 @@ Key infrastructure day (`+38` packages installed in `pacman.log`):
 Major standardization and system hardening session (`02:47 – 03:03`):
 - Created/updated suite scripts in `~/.local/bin/`:
   - `actualizar-todo` (with symlink `~/actualizar-todo.sh`)
-  - `blindaje-seguridad` (with symlinks `~/aplicar-seguridad-root.sh` and `~/optimizacion/aplicar-optimizacion-sistema.sh`) — see full 8-layer breakdown in [SEGURIDAD.md](SEGURIDAD.md)
+  - `blindaje-seguridad` (with symlinks `~/aplicar-seguridad-root.sh` and `~/optimizacion/aplicar-optimizacion-sistema.sh`) — see full 8-layer breakdown in [SECURITY.md](SECURITY.md)
   - `instalar-seguridad-y-limpieza` (with symlink `~/instalar-seguridad-y-limpieza.sh`)
   - `limpiar-sistema`, `optimizar-ryzen`, `respaldo-usb`, `titan-doctor`, `titan-hardware-root`, `titan-oneclick`, `centro_de_control.py`
 - English → Spanish user directory symlinks: `~/Documents -> ~/Documentos`, `~/Downloads -> ~/Descargas`, `~/Videos -> ~/Vídeos`.
@@ -254,3 +254,59 @@ Major standardization and system hardening session (`02:47 – 03:03`):
 - **Anti-Loss Protection (`matrix-auto-backup.timer`):**
   - Deployed `~/.local/bin/matrix-auto-backup` with a persistent daily user systemd timer (`~/.config/systemd/user/matrix-auto-backup.{service,timer}`, `Nice=19`, `IOSchedulingClass=idle`) creating `chmod 600` rolling 7-day snapshots in `~/.local/share/matrix-backups/` (`chmod 700`) of KDE/KWin configs, `~/.local/bin`, `~/.gemini/config/`, and Matrix OS profiles.
   - Verified `~/Downloads` is clean of exposed sensitive documents and `titan-doctor` is `100% [OK]`.
+
+
+---
+
+## 2026-11-25 — Dota 2 20-FPS Regression Forensic Investigation (`Mesa 26.3.1` `VK_AMD_anti_lag`), `<1s` RADV Shader Cache & Pure CachyOS Gaming Pipeline
+
+### 1. Problem Statement & Symptoms (`22:54 – 23:15`)
+- **Symptoms reported:**
+  1. **Slow shader processing & confusing Steam UI:** Steam repeatedly stalled game launches with multi-gigabyte *"Processing Vulkan shaders..."* Fossilize queues (`3.4 GB` `fozpipelinesv6` under `~/.local/share/Steam/steamapps/shadercache/570`), while enabling *"Show all compatibility tools"* in Dota 2's Compatibility menu exposed ~20 legacy Proton/Runtime entries that risked breaking native execution or triggering VAC mismatches.
+  2. **Severe framerate collapse (`120 FPS → 20–24 FPS`):** Dota 2 (`AppID 570`) had previously sustained **120+ FPS** on the **AMD Ryzen 5 8500G + Radeon 740M (`PHOENIX2`, 4 CUs RDNA3)**, but was now locked at **20–24 FPS** (`~41.6 ms` frametime) despite low CPU (`~19%`) and GPU (`~35–39%`) utilization.
+
+### 2. Step-by-Step Forensic Investigation & Elimination of Secondary Bottlenecks (`22:55 – 23:44`)
+
+1. **BIOS, UMA VRAM & DDR5 EXPO Hardware Audit (Verified 100% Healthy):**
+   - Verified dedicated UMA frame buffer in sysfs (`/sys/class/drm/card1/device/mem_info_vram_total`): **`4096 MiB` (4 GB fixed in BIOS)** active, ~`2.5–3.7 GiB` utilized in-game with zero GTT thrashing.
+   - Verified Dual-Channel memory configuration via `udev` SMBIOS DMI tables and `amdgpu` clocks: **`2 × 16 GiB DDR5 @ 6000 MT/s`** (`pp_dpm_mclk = 3000 MHz *`, `pp_dpm_fclk = 2000 MHz *` 1:1 Infinity Fabric).
+   - Verified CPU frequency scaling & scheduler: `amd-pstate-epp` (`performance` governor/EPP boosting to **`5.08 GHz`**) running under CachyOS/SteamOS **`scx_lavd 1.1.4`** (`--performance` BPF `sched_ext` scheduler) + `ananicy-cpp` (`cachyos-ananicy-rules-git`, `nice -5` on `dota2`) + Kernel `7.3.6-arch1-1` native `/dev/ntsync`.
+
+2. **Instant `<1s` Vulkan Shader Loading (Eliminating Steam's 3.4 GB Fossilize Replay):**
+   - Inspected `~/.local/share/Steam/logs/shader_log.txt` and `config.vdf`: Steam had queued `"ProcessingQueue" "570;"` against a `3.4 GB` `fozpipelinesv6` archive, even though `Mesa 26.3.1-arch1.3` (`RADV` + `ACO` + `VK_EXT_graphics_pipeline_library` / GPL) already held **`645 MiB` of pre-compiled native `PHOENIX2` binary shaders** inside `mesa_shader_cache_sf`.
+   - Extracted and preserved the `645 MiB` compiled RADV binary cache into a dedicated NVMe path (`~/.cache/dota2_radv_cache/mesa_shader_cache_sf`), set `"DisableShaderCache" "1"` in `~/.local/share/Steam/config/config.vdf`, purged the redundant `3.4 GB` `fozpipelinesv6` replay queue, configured `~/.local/share/Steam/steam_dev.cfg` (`@unShaderBackgroundProcessingThreads 12` + HTTP/2 multi-connection downloads), and set `CompatToolMapping` global default (`"0"`, priority `75`) to `proton-cachyos-11.0-20261015-slr-x86_64_v3` while leaving `AppID 570` unmapped so Dota 2 defaults cleanly to **`Steam Linux Runtime 3.0 (sniper)`**.
+
+3. **Secondary System & Engine Bottlenecks Discovered and Fixed Along the Way:**
+   - **Radeon 740M GPU DPM Clock Lock (`800 MHz → 2799 MHz`):** Removing `gamemoderun` (which conflicted with `scx_lavd` / `ananicy-cpp` and threw `ioprio` + `pkexec` errors inside `pressure-vessel`) left `/sys/class/drm/card1/device/power_dpm_force_performance_level` in `auto`, keeping `sclk` downclocked at **`800 MHz`** instead of **`2799 MHz`**. Wired passwordless Polkit `gpuclockctl 1 set high` on launch (and `set auto` on exit) directly into `~/.local/bin/titan-game-run`, unlocking the full **`2799 MHz`** iGPU clock without `gamemoded` or `LD_PRELOAD` injection.
+   - **Audio Mixer Underrun Stall (`snd_mixahead "0.001" → "0.025"`):** Found `"snd_mixahead" "0.001"` (`1 ms` mix buffer — smaller than PipeWire's `5.33 ms` `256/48000` quantum) and `"engine_no_focus_sleep" "30"` (`1000 ms / ~41.6 ms = 24 FPS` during unfocused/Spectacle screenshot events) persisted in `machine_convars.vcfg`. Normalized to `"0.025"` and `"0"`.
+   - **KWin 6 Wayland Direct Scanout Restoration (`ICC → sRGB`):** `HDMI-A-1` (`1920x1080@74.99Hz`) had `"colorProfileSource": "ICC"`, causing KWin 6 to disable zero-copy Direct Scanout and run a full-screen color shader pass on every frame. Switched live to `kscreen-doctor output.HDMI-A-1.colorProfileSource.sRGB`, restoring zero-copy Direct Scanout + `AllowTearing=true`.
+
+4. **Differential A/B Test (`Proton-CachyOS 11` vs `Native Linux Vulkan`):**
+   - Testing Windows `dota2.exe` under `proton-cachyos-11.0` initially crashed at startup (`dota2_2026_1125_232857_0_accessviolation.mdmp`). Inspecting the minidump binary strings revealed `No valid vcs file found for shader spritecard.vfx` because `-vulkan` was passed to Windows `dota2.exe` without the optional Windows Vulkan DLC.
+   - Added automatic `-vulkan → -dx11` translation for Proton sessions in `titan-game-run` (`DXVK 2.x` + `NTSYNC` → `RADV`).
+   - **Crucial A/B Result:** Under `Proton-CachyOS 11` (`-dx11` → `DXVK`), Dota 2 immediately surged to **`120+ real FPS`** (`342%` multi-thread Zen 4 CPU load, `2799 MHz` SCLK, `~8.3 ms` frametime) — **proving 100% that BIOS, UMA VRAM, DDR5-6000, KWin, and RADV hardware performance were intact** — However, Valve intentionally blocks **VAC online matchmaking** when running Dota 2 through Proton on Linux (*"Valve Anti-Cheat was unable to verify that your machine is secure"*).
+   - Switching back to **Native Linux (`Steam Linux Runtime 3.0`)** immediately dropped performance back from **`120 FPS` to `20 FPS`** (`143%` CPU, `39%` GPU busy), isolating the regression strictly to the **Native Linux Vulkan codepath**.
+
+### 3. The Smoking Gun: Instruction-Level Disassembly (`Mesa 26.3.1` `VK_AMD_anti_lag` Sleep Bug) (`23:45 – 23:51`)
+- Attached `eu-stack` and `gdb` to the live `20 FPS` Native Linux `dota2` process (`PID 158307`) across consecutive samples. **100% of main-thread samples (`TID 158307`) were blocked on identical program counters (`SYSCALL=230` = `clock_nanosleep`):**
+  ```text
+  #0  0x7f52baaa08f2 -> libc.so.6 + 0xa08f2
+  #1  0x7f5283173c37 -> libvulkan_radeon.so + 0x373c37  (os_time_nanosleep_until + 0x67 -> call clock_nanosleep)
+  #2  0x7f52b10d5d7e -> librendersystemvulkan.so + 0x4d4d7e  (CAMDAntiLagVulkan -> vkAntiLagUpdateAMD)
+  #3  0x7f52b117e805 -> librendersystemvulkan.so + 0x57d805
+  ```
+- **Root Cause:**
+  1. `Mesa 26.3.1` (`libvulkan_radeon.so`) advertises the **`VK_AMD_anti_lag`** device extension (`vkAntiLagUpdateAMD`).
+  2. Whenever Dota 2's **AMD Anti-Lag 2** setting (`r_low_latency "1"`) is enabled on Native Linux Vulkan, Source 2's `CAMDAntiLagVulkan` invokes `vkAntiLagUpdateAMD` on Thread 1 every frame, which enters `os_time_nanosleep_until` (`clock_nanosleep`) inside `libvulkan_radeon.so` and **sleeps the main engine thread for ~40 ms per frame — hard-clamping framerate to `20–24 FPS`** while leaving both CPU and GPU mostly idle!
+  3. Under `Proton-CachyOS` (`-dx11` → `DXVK`), `amd_ags_x64.dll` is a no-op under Wine and never touches `VK_AMD_anti_lag`, explaining why Proton ran at `120 FPS` while Native Vulkan stalled at `20 FPS`.
+  4. Furthermore, whenever `"setting.useadvanced"` in `video.txt` drifted to `"0"` (*Use basic settings*), Source 2's startup preset generator saw `VK_AMD_anti_lag` advertised by RADV and **silently re-enabled `"setting.r_low_latency" "1"` on its own**!
+
+### 4. Permanent Fix & Physical Guardrails (`titan-game-run v3.1`) (`23:51 – 23:58`)
+- **Live Verification:** Executing `r_low_latency 0` inside the running Native Linux Dota 2 console **immediately jumped framerate from `20 FPS` back to `120+ real FPS`** with **100% valid VAC online matchmaking**.
+- **Permanent Multi-Layer Lock (`~/.local/bin/titan-game-run v3.1` & `autoexec.cfg`):**
+  1. Updated `autoexec.cfg` with `r_low_latency "0"` and `engine_low_latency_sleep_after_client_tick "false"`.
+  2. Hardened `~/.local/bin/titan-game-run` (`v3.1`) to sanitize `video.txt` before every launch (`"setting.useadvanced" "1"`, `"setting.r_low_latency" "0"`, `"setting.shaderquality" "0"`, `"setting.cl_globallight_shadow_mode" "0"`, `"setting.mat_viewportscale" "0.850000"`, `"setting.r_dota_fsr_upsample" "1"`), enforce **`chmod 444` (read-only)** on `video.txt` so Source 2 / Steam Cloud can never flip `useadvanced` back to `"0"` or auto-enable `r_low_latency`, and append `+r_low_latency 0 +engine_no_focus_sleep 0 +fps_max 150` directly to the engine startup arguments.
+- **Final Verified State:**
+  - **Shader Load Time:** **`< 1 second`** (zero Steam Fossilize replay wait; `645 MiB` pre-compiled RADV cache on NVMe).
+  - **In-Game Performance:** **`120–150 real FPS`** (`~6.6–8.3 ms` frametime, `2799 MHz` Radeon 740M, `5.08 GHz` Zen 4, `sRGB` Direct Scanout + `AllowTearing=true`).
+  - **Anti-Cheat & Compatibility:** **100% Native Linux (`Steam Linux Runtime 3.0`) with VAC verified**, while all Windows Steam titles default globally to `Proton-CachyOS 11` (`NTSYNC`).
