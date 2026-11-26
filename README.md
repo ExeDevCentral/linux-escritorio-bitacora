@@ -54,6 +54,7 @@
 | File | Description |
 | --- | --- |
 | [LOGBOOK.md](LOGBOOK.md) | Complete chronological engineering timeline (`Oct 21 – Nov 25, 2026`), forensic debugging sessions, regressions, and verified fixes. |
+| [UPSTREAM_BUG_REPORT_MESA_16959.md](UPSTREAM_BUG_REPORT_MESA_16959.md) | Upstream triage & ready-to-file bug reports for **Mesa GitLab `#16959`** (`VK_AMD_anti_lag` / `vk_frame_pacer` 20 FPS stall) and **Valve `Dota-2`**. |
 | [SECURITY.md](SECURITY.md) | 8-layer TITAN security architecture (`sysctl`, `firewalld` DROP, DNS-over-TLS, MAC randomization, Docker isolation, AppArmor, ClamAV). |
 | [INVENTORY.md](INVENTORY.md) | Verified map of `~/.local/bin/` automation scripts, user symlinks, XDG paths, and `/etc/` kernel/udev overrides. |
 | [LICENSE](LICENSE) | MIT License. |
