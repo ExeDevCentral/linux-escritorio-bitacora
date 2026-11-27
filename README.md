@@ -94,4 +94,4 @@ struct system_state {
   * matrix-auto-backup.timer     * xdg-user-dirs.service    * docker-desktop (15s stop cap)
 ```
 
-_Última revisión: 2026-11-26 19:58_
+_Última revisión: 2026-11-27 19:41_
